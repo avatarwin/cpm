@@ -37,7 +37,7 @@
 #define STACK		0xEF00	/* grows down from here */
 
 /* The first NUMHDISCS drives may be specified as hard-drives. */
-#define NUMHDISCS	2
+#define NUMHDISCS	4
 #define NUMDISCS	(MAXDISCS - NUMHDISCS)
 
 #if NUMHDISCS > MAXDISCS
@@ -375,26 +375,31 @@ realizedisk(z80info *z80)
 
 	if (z80->drives[drive] == NULL)
 	{
+		char fullpath[1024];
 		struct stat statbuf;
 		long secs;
 		FILE *fp;
+		
+		strcpy(fullpath, getenv("HOME"));
+		strcat(fullpath, "/.local/share/cpm/");
+		strcat(fullpath, drivestr );
 
-		fp = fopen(drivestr, "rb+");
+		fp = fopen(fullpath, "rb+");
 
 		if (fp == NULL)
-			fp = fopen(drivestr, "wb+");
+			fp = fopen(fullpath, "wb+");
 
 		if (fp == NULL)
 		{
 			fprintf(stderr, "seldisc(): Cannot open file '%s'!\r\n",
-					drivestr);
+					fullpath);
 			return;
 		}
 
-		if (stat(drivestr, &statbuf) < 0)
+		if (stat(fullpath, &statbuf) < 0)
 		{
 			fprintf(stderr, "seldisc(): Cannot stat file '%s'!\r\n",
-					drivestr);
+					fullpath);
 			fclose(fp);
 			return;
 		}
@@ -409,7 +414,7 @@ realizedisk(z80info *z80)
 			if (fwrite(buf, 1, SECTORSIZE, fp) != SECTORSIZE)
 			{
 				fprintf(stderr, "seldisc(): Cannot create file '%s'!\r\n",
-						drivestr);
+						fullpath);
 
 				fclose(fp);
 				return;
@@ -418,7 +423,7 @@ realizedisk(z80info *z80)
 			secs = 1;
 		}
 
-		/* printf(stderr,"\r\nOpen %s on drive %d\n", drivestr, drive); */
+		/* printf(stderr,"\r\nOpen %s on drive %d\n", fullpath, drive); */
 
 		z80->drives[drive] = fp;
 		z80->drivelen[drive] = secs * SECTORSIZE;
